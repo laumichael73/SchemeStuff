@@ -1,0 +1,70 @@
+;Michael Folz
+;Mark Gross
+
+#lang racket
+require"simpleParser.scm"
+
+;we're going with the ((var1 var2 ...) (val1 val2...)) organization since it helps later...? hopefully?
+;m_state (var1... varn)
+;m_values (val1... valn)
+;cstate (m_state m_values)
+
+(define (m_state) (car cstate))
+(define (m_values) (cadr cstate))
+
+;add a value to the state
+(define (m_state_add var val state values)
+	(cond
+		((null? state) (cons state var) (cons values val))
+		(else (m_state_add var val (cdr state) (cdr values)))))
+
+;removes that var and that val from state and values respectively
+(define (m_state_remove var state values)
+	(cond
+		((null? state) '() '())
+		((eq? var (car state)) (cdr state) (cdr values))
+		(else (m_state_remove var (cdr state) (cdr values)))))
+
+;returns the val associated with the var
+(define (m_state_lookup var state values)
+	(cond
+		((null? state) '(() ()) )
+		((eq? (car state)) (car values))
+		(else (m_state_lookup var (cdr state) (cdr values)))))
+ 
+
+
+
+
+
+
+
+;(parser"<filename>")
+(parser "testfiles/test1")
+(parser "testfiles/test2")
+(parser "testfiles/test3")
+(parser "testfiles/test4")
+(parser "testfiles/test5")
+(parser "testfiles/test6")
+(parser "testfiles/test7")
+(parser "testfiles/test8")
+(parser "testfiles/test9")
+(parser "testfiles/test10")
+(parser "testfiles/test11")
+(parser "testfiles/test12")
+(parser "testfiles/test13")
+(parser "testfiles/test14")
+(parser "testfiles/test15")
+(parser "testfiles/test16")
+(parser "testfiles/test17")
+(parser "testfiles/test18")
+(parser "testfiles/test19")
+(parser "testfiles/test20")
+(parser "testfiles/test21")
+(parser "testfiles/test22")
+(parser "testfiles/test23")
+(parser "testfiles/test24")
+(parser "testfiles/test25")
+(parser "testfiles/test26")
+(parser "testfiles/test27")
+(parser "testfiles/test28")
