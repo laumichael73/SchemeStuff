@@ -7,23 +7,27 @@
 ;we're going with the ((var1 var2 ...) (val1 val2...)) organization since it helps later...? hopefully?
 ;m_state (var1... varn)
 ;m_values (val1... valn)
+;state is a list of two lists, m_state and m_values
 ;cstate (m_state m_values)
 
-;(define (m_state) (car cstate))
-;(define (m_values) (cadr cstate))
+;methods to manipulate the state, get the variables, values, or to build a state from vars and vals
+(define (m_state cstate) (car cstate))
+(define (m_values cstate) (cadr cstate))
+(define (buildstate vars vals) (list (list vars) (list vals)))
 
 ;add a value to the state
-(define (m_state_add var val state values)
+(define (m_state_add var val cstate)
 	(cond
 		((null? state) (cons state var) (cons values val))
 		(else (m_state_add var val (cdr state) (cdr values)))))
 
-;removes that var and that val from state and values respectively
-(define (m_state_remove var state values)
+;removes that var from the state, and the associated values with that label
+(define (m_state_remove var cstate)
 	(cond
-		((null? state) '() '())
-		((eq? var (car state)) (cdr state) (cdr values))
-		(else (m_state_remove var (cdr state) (cdr values)))))
+		((null? (m_state cstate)) '() )
+		;if it's eq then recurse on (buildstate the next var, and the next var)
+		((eq? var (car (m_state state)) (
+
 
 ;returns the val associated with the var
 (define (m_state_lookup var state values)
@@ -31,7 +35,16 @@
 		((null? state) '(() ()) )
 		((eq? (car state)) (car values))
 		(else (m_state_lookup var (cdr state) (cdr values)))))
- 
+
+
+;cps append taken from class on 2/16
+(define (appendit l1 l2)
+  (if (null? l1) (mycont l2)
+      (cons (car l1) (appendit (cdr l1) l2))))
+(define mycont (lambda (v) v))
+
+
+
 
 ;needs to check for:
 
@@ -72,12 +85,12 @@
 ;if
 ;else
 
-;while (cond 
+;while (cond
 
 
 
 (define (testeverything)
-(list 
+(list
 (cons (parser "testfiles/test1") (interpret (parser "testfiles/test1")))
 (cons (parser "testfiles/test2") (interpret (parser "testfiles/test2")))
 (cons (parser "testfiles/test3") (interpret (parser "testfiles/test3")))
@@ -106,4 +119,3 @@
 (cons (parser "testfiles/test26") (interpret (parser "testfiles/test26")))
 (cons (parser "testfiles/test27") (interpret (parser "testfiles/test27")))
 (cons (parser "testfiles/test28") (interpret (parser "testfiles/test28"))))
-
