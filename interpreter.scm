@@ -7,13 +7,16 @@
 ;we're going with the ((var1 var2 ...) (val1 val2...)) organization since it helps later...? hopefully?
 ;state is a list of two lists, m_state and m_values
 ;cstate- "current state" has structure (m_state m_values)
-;m_state (var1... varn)
-;m_values (val1... valn)
+;m_state has structure (var1... varn)
+;m_values has structure (val1... valn)
 
 
-;methods to manipulate the state, get the variables, values, or to build a state from vars and vals
+;gets the state list from a state
 (define (m_state cstate) (car cstate))
+;gets the value list from the state
 (define (m_values cstate) (cadr cstate))
+;constructs a state from a list of vars and vals
+;TODO check they're the same length? might become a problem in the future, idk
 (define (buildstate vars vals) (list vars vals))
 
 ;add a value to the state
@@ -66,9 +69,7 @@
 ;needs to check for:
 
 ;Test 12: This code should give an error (using before declaring).
-
 ;Test 13: This code should give an error (using before assigning).
-
 ;Test 14: This code should give an error (redefining).  This is not a required error, but it would be nice if you
 ;could catch these.
 
@@ -88,7 +89,7 @@
 ;%
 ;! (something)
 ;=
-;- (both subtraction and unary)
+;- (both subtraction and negative)
 ;/
 ;*
 ;+
@@ -102,7 +103,7 @@
 ;if
 ;else
 
-;while (cond
+;while (cond) do ()
 
 
 
