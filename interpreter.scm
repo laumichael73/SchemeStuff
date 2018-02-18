@@ -20,13 +20,10 @@
 (define (buildstate vars vals) (list vars vals))
 
 ;add a value to the state
-;TODO check if the value is already declared, maybe lookup first?
 (define (m_state_add var val cstate)
-	(cond
-		((null? (m_state cstate)) (buildstate (appendit (m_state cstate) (list var))
-						      (appendit (m_values cstate) (list val))))
-		(else (m_state_add var val (buildstate (cdr (m_state cstate))
-						       (cdr (m_values cstate)))))))
+	(if (eq? (m_state_lookup var) '())
+	 (buildstate (cons var (m_state cstate)) (cons val (m_values cstate) )))
+	 (else (error 'value is already declared'))
 
 ;removes that var from the state, and the associated values with that label
 ;doesn't assume that the value is used once, will remove all instances of that variable
@@ -61,8 +58,8 @@
 (define mycont (lambda (v) v))
 
 (define (state_append_tofront var val cstate)
-	(buildstate (appendit (list var) (m_state cstate))
-							(appendit (list val) (m_values cstate))))
+	(buildstate (cons var (m_state cstate))
+							(cons val (m_values cstate))))
 
 
 ;needs to check for:
