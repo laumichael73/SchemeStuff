@@ -24,9 +24,9 @@
 (define (m_state_add var val cstate)
 	(cond
 		((null? (m_state cstate)) (buildstate (appendit (m_state cstate) (list var))
-						      (appendit (m_values cstate) (list val))))
+															 						(appendit (m_values cstate) (list val))))
 		(else (m_state_add var val (buildstate (cdr (m_state cstate))
-						       (cdr (m_values cstate)))))))
+																					 (cdr (m_values cstate)))))))
 
 ;removes that var from the state, and the associated values with that label
 ;doesn't assume that the value is used once, will remove all instances of that variable
@@ -34,8 +34,9 @@
 	(cond
 		((null? (m_state cstate)) (buildstate '() '()))
 		;if it's eq then recurse on (buildstate the next var, and the next val)
-		((eq? var (car (m_state cstate))) (m_state_remove var (buildstate (cdr (m_state cstate))
-										  (cdr (m_values cstate)))))
+		((eq? var (car (m_state state))) (m_state_remove var (buildstate (cdr (m_state cstate))
+		 																																 (cdr (m_values cstate)))))
+
 		(else (state_append_tofront var (buildstate (cdr (m_state cstate))
 																								(cdr (m_values cstate)))))))
 
@@ -46,9 +47,9 @@
 		((null? (m_state cstate) '() )) ;didn't find that var in the state
 		((eq? var (car (m_state cstate))) (appendit (car(m_values cstate)) ;with
 					(m_state_lookup var (buildstate (cdr (m_state cstate))
-                                                                        (cdr (m_values cstate))))))
+																					(cdr (m_values cstate))))))
 		(else (m_state_lookup var (buildstate (cdr (m_state cstate))
-				    		      (cdr (m_values cstate)))))))
+																					(cdr (m_values cstate)))))))
 
 
 
@@ -104,11 +105,7 @@
 
 ;while (cond) do ()
 
-(define (interpret lis)
-  ('()))
 
-
-(define (teststate) (buildstate '(x y z) '(1 2 3)))
 
 (define (testeverything)
 	(list
