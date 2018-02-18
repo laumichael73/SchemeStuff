@@ -5,36 +5,51 @@
 (require "simpleParser.scm")
 
 ;we're going with the ((var1 var2 ...) (val1 val2...)) organization since it helps later...? hopefully?
+;state is a list of two lists, m_state and m_values
+;cstate- "current state" has structure (m_state m_values)
 ;m_state (var1... varn)
 ;m_values (val1... valn)
-;state is a list of two lists, m_state and m_values
-;cstate (m_state m_values)
+
 
 ;methods to manipulate the state, get the variables, values, or to build a state from vars and vals
 (define (m_state cstate) (car cstate))
 (define (m_values cstate) (cadr cstate))
-(define (buildstate vars vals) (list (list vars) (list vals)))
+(define (buildstate vars vals) (list vars vals))
 
 ;add a value to the state
+;TODO check if the value is already declared, maybe lookup first?
 (define (m_state_add var val cstate)
 	(cond
-		((null? state) (cons state var) (cons values val))
-		(else (m_state_add var val (cdr state) (cdr values)))))
+		((null? (m_state cstate)) (buildstate (appendit (m_state cstate) (list var))
+															 						(appendit (m_values cstate) (list val))))
+		(else (m_state_add var val (buildstate (cdr (m_state cstate))
+																					 (cdr (m_values cstate)))))))
 
 ;removes that var from the state, and the associated values with that label
+;doesn't assume that the value is used once, will remove all instances of that variable
 (define (m_state_remove var cstate)
 	(cond
-		((null? (m_state cstate)) '() )
-		;if it's eq then recurse on (buildstate the next var, and the next var)
-		((eq? var (car (m_state state)) (
+		((null? (m_state cstate)) (buildstate '() '()))
+		;if it's eq then recurse on (buildstate the next var, and the next val)
+		((eq? var (car (m_state state))) (m_state_remove var (buildstate (cdr (m_state cstate))
+		 																																 (cdr (m_values cstate)))))
 
+		(else (state_append_tofront var (buildstate (cdr (m_state cstate))
+																								(cdr (m_values cstate)))))))
 
-;returns the val associated with the var
-(define (m_state_lookup var state values)
+;returns a list of vals associated with the var
+(define (m_state_lookup var cstate)
 	(cond
-		((null? state) '(() ()) )
-		((eq? (car state)) (car values))
-		(else (m_state_lookup var (cdr state) (cdr values)))))
+	;if it's null then we got through the whole thing without finding the var, so it's not there
+		((null? (m_state cstate) '() )) ;didn't find that var in the state
+		((eq? var (car (m_state cstate))) (appendit (car(m_values cstate)) ;with
+					(m_state_lookup var (buildstate (cdr (m_state cstate))
+																					(cdr (m_values cstate))))))
+		(else (m_state_lookup var (buildstate (cdr (m_state cstate))
+																					(cdr (m_values cstate)))))))
+
+
+
 
 
 ;cps append taken from class on 2/16
@@ -43,7 +58,9 @@
       (cons (car l1) (appendit (cdr l1) l2))))
 (define mycont (lambda (v) v))
 
-
+(define (state_append_tofront var val cstate)
+	(buildstate (appendit (list var) (m_state cstate))
+							(appendit (list val) (m_values cstate))))
 
 
 ;needs to check for:
