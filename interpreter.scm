@@ -26,9 +26,8 @@
 ;add a value to the state
 (define (m_state_add var val cstate)
   (cond
-    ((eq? (m_state_lookup var cstate) '()) (buildstate (cons var (m_state cstate)) (cons val (m_values cstate))))
-	 (else
-          error1)))
+    ((eq? (m_state_lookup var cstate) '()) (state_append_tofront var val cstate))
+    (else error1)))
 
 ;removes that var from the state, and the associated values with that label
 ;doesn't assume that the value is used once, will remove all instances of that variable
