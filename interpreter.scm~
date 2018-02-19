@@ -10,7 +10,7 @@
 ;m_state has structure (var1... varn)
 ;m_values has structure (val1... valn)
 
-(define error1 "Variable already declared, what are you doing")
+
 ;gets the state list from a state
 (define (m_state cstate) (car cstate))
 ;gets the value list from the state
@@ -21,27 +21,31 @@
 
 ;add a value to the state
 (define (m_state_add var val cstate)
-  (cond
-    ((eq? (m_state_lookup var cstate) '()) (buildstate (cons var (m_state cstate)) (cons val (m_values cstate))))
-	 (else
-          error1)))
+	(if (eq? (m_state_lookup var) '())
+	 (buildstate (cons var (m_state cstate)) (cons val (m_values cstate) )))
+	 (else (error 'value is already declared'))
 
 ;removes that var from the state, and the associated values with that label
 ;doesn't assume that the value is used once, will remove all instances of that variable
 (define (m_state_remove var cstate)
 	(cond
-          ((null? (m_state cstate)) (buildstate '() '()))
-          ;if it's eq then recurse on (buildstate the next var, and the next val)
-          ((eq? var (car (m_state cstate))) (m_state_remove var (buildstate (cdr (m_state cstate))(cdr (m_values cstate)))))
-	(else (state_append_tofront (car (m_state cstate)) (car (m_values cstate)) (m_state_remove var (buildstate (cdr (m_state cstate))(cdr (m_values cstate))))))))
+		((null? (m_state cstate)) (buildstate '() '()))
+		;if it's eq then recurse on (buildstate the next var, and the next val)
+		((eq? var (car (m_state cstate))) (m_state_remove var (buildstate (cdr (m_state cstate))
+										  (cdr (m_values cstate)))))
+		(else (state_append_tofront var (buildstate (cdr (m_state cstate))
+																								(cdr (m_values cstate)))))))
 
 ;returns a list of vals associated with the var
 (define (m_state_lookup var cstate)
 	(cond
 	;if it's null then we got through the whole thing without finding the var, so it's not there
-          ((null? (m_state cstate)) '()) ;didn't find that var in the state
-          ((eq? var (car (m_state cstate))) (cons (car(m_values cstate))  (m_state_lookup var (buildstate (cdr (m_state cstate))(cdr (m_values cstate))))))
-          (else (m_state_lookup var (buildstate (cdr (m_state cstate)) (cdr (m_values cstate)))))))
+		((null? (m_state cstate) '() )) ;didn't find that var in the state
+		((eq? var (car (m_state cstate))) (appendit (car(m_values cstate)) ;with
+					(m_state_lookup var (buildstate (cdr (m_state cstate))
+                                                                        (cdr (m_values cstate))))))
+		(else (m_state_lookup var (buildstate (cdr (m_state cstate))
+				    		      (cdr (m_values cstate)))))))
 
 
 
@@ -54,7 +58,8 @@
 (define mycont (lambda (v) v))
 
 (define (state_append_tofront var val cstate)
-	(buildstate (cons var (m_state cstate))(cons val (m_values cstate))))
+	(buildstate (cons var (m_state cstate))
+							(cons val (m_values cstate))))
 
 
 ;needs to check for:
