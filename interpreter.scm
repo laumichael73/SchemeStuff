@@ -10,7 +10,11 @@
 ;m_state has structure (var1... varn)
 ;m_values has structure (val1... valn)
 
-(define error1 "Variable already declared, what are you doing")
+(define error1 "reassigning, what are you doing")
+(define error2 "need to declare a variable before you can use it, stop writing bad code")
+(define error3 "using before assigning you cottonheaded ninny muggins")
+
+
 ;gets the state list from a state
 (define (m_state cstate) (car cstate))
 ;gets the value list from the state
@@ -42,10 +46,6 @@
           ((null? (m_state cstate)) '()) ;didn't find that var in the state
           ((eq? var (car (m_state cstate))) (cons (car(m_values cstate))  (m_state_lookup var (buildstate (cdr (m_state cstate))(cdr (m_values cstate))))))
           (else (m_state_lookup var (buildstate (cdr (m_state cstate)) (cdr (m_values cstate)))))))
-
-
-
-
 
 ;cps append taken from class on 2/16
 (define (appendit l1 l2)
