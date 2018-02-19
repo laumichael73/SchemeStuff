@@ -15,6 +15,10 @@
 (define error3 "using before assigning you cottonheaded ninny muggins")
 
 
+;----------------------------------------------------------------------------
+; state manipulation methods: m_state_add, m_state_remove, and m_state_lookup
+;----------------------------------------------------------------------------
+
 ;gets the state list from a state
 (define (m_state cstate) (car cstate))
 ;gets the value list from the state
@@ -26,7 +30,7 @@
 ;add a value to the state
 (define (m_state_add var val cstate)
   (cond
-    ((eq? (m_state_lookup var cstate) '()) (state_append_tofront var val cstate))
+    ((eq? (m_state_lookup var cstate) '(declared)) (state_append_tofront var val cstate))
     (else error1)))
 
 ;removes that var from the state, and the associated values with that label
@@ -35,16 +39,16 @@
 	(cond
           ((null? (m_state cstate)) (buildstate '() '()))
           ;if it's eq then recurse on (buildstate the next var, and the next val)
-          ((eq? var (car (m_state cstate))) (m_state_remove var (buildstate (cdr (m_state cstate))(cdr (m_values cstate)))))
-	(else (state_append_tofront (car (m_state cstate)) (car (m_values cstate)) (m_state_remove var (buildstate (cdr (m_state cstate))(cdr (m_values cstate))))))))
+          ((eq? var (car (m_state cstate))) (m_state_remove var ((recursestate cstate))))
+	(else (state_append_tofront (car (m_state cstate)) (car (m_values cstate)) (m_state_remove var ((recursestate cstate)))))))
 
 ;returns a list of vals associated with the var
 (define (m_state_lookup var cstate)
 	(cond
 	;if it's null then we got through the whole thing without finding the var, so it's not there
           ((null? (m_state cstate)) '()) ;didn't find that var in the state
-          ((eq? var (car (m_state cstate))) (cons (car(m_values cstate))  (m_state_lookup var (buildstate (cdr (m_state cstate))(cdr (m_values cstate))))))
-          (else (m_state_lookup var (buildstate (cdr (m_state cstate)) (cdr (m_values cstate)))))))
+          ((eq? var (car (m_state cstate))) (cons (car(m_values cstate))  (m_state_lookup var (recursestate cstate))))
+          (else (m_state_lookup var (recursestate cstate)))))
 
 ;cps append taken from class on 2/16
 (define (appendit l1 l2)
@@ -56,6 +60,10 @@
 	(buildstate (cons var (m_state cstate))(cons val (m_values cstate))))
 
 
+(define (recursestate cstate) (buildstate (cdr (m_state cstate)) (cdr (m_values buildstate))))
+;------------------------------------------------------------------------------------------
+;interpreter methods
+;--------------------------------------------------------------------------------------------
 ;needs to check for:
 
 ;Test 12: This code should give an error (using before declaring).
@@ -70,15 +78,25 @@
 ;need to write:
 
 ;return
+(define (return var cstate) (m_state_lookup var cstate))
+
+;when a function is declared, before it is used, it is associated with the value 'declared rather than a number
+;TODO check when we're doing operations that the value is assigned a number and not declared
+;TODO check that the value is't already declared
 ;var
+(define (declare var cstate) (m_state_add var 'declared cstate))
 
 ;&&
+
 ;||
 
 
 ;%
 ;! (something)
+
 ;=
+(define (equals var val cstate) (m_state_add var val cstate))
+
 ;- (both subtraction and negative)
 ;/
 ;*
