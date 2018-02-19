@@ -77,19 +77,15 @@
 ;return
 ;(define (return var cstate))
 
+
 ;when a function is declared, before it is used, it is associated with the value 'declared rather than a number
 ;m_state_add already checks that the variable isn't already declared
 ;var
 (define (declare var cstate) (m_state_add var 'declared cstate))
-    
 ;&&
-
 ;||
-
-
 ;%
 ;! (something)
-
 ;=
 (define (equals var val cstate)
   (cond
@@ -112,18 +108,24 @@
 (define (interpret lis cstate)
   (cond
     ((null? lis) lis)
+    ((number? lis) lis)
     ((null? (car lis)) lis)
-    ;here the car of lis isn't a number, so check what it is
     ((number? (car lis)) (car lis))
+    ;here the car of lis isn't a number, need to figgure out what operator
     ((list? (car lis)) (interpret (car lis) cstate))
-    ((equal? '(return) (car lis)) (interpret (cdr lis) cstate))
-    ((equal? '(-) (car lis)) (- (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '(/) (car lis)) (/ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '(*) (car lis)) (* (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '(+) (car lis)) (+ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '(<) (car lis)) (< (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '(>) (car lis)) (> (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? 'return (car lis)) (interpret (cdr lis) cstate))
+    ;unary operators
+    ;TODO this, but how to test it?
 
+    ;binary operators
+    ((equal? 'var (car lis)) (interpret (cddr lis) (declare (cadr lis) cstate))) 
+    ((equal? '- (car lis)) (- (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '/ (car lis)) (/ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '* (car lis)) (* (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '+ (car lis)) (+ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '< (car lis)) (< (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '> (car lis)) (> (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '% (car lis)) (modulo (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
     (else (interpret (cdr lis) cstate))))
     
 
@@ -142,7 +144,7 @@
 
 
 (define (test1) (appendit (parser "testfiles/test1") (interpret (parser "testfiles/test1") nullstate)))
-(define (test2) (appendit (parser "testfiles/test2") (interpret (parser "testfiles/test2") nullstate)))
+(define (test2) (appendit (parser "testfiles/test2") (interpret (parser "testfiles/test2") nullstate))); should be -4
 (define (test3) (appendit (parser "testfiles/test3") (interpret (parser "testfiles/test3") nullstate)))
 (define (test4) (appendit (parser "testfiles/test4") (interpret (parser "testfiles/test4") nullstate)))
 (define (test5) (appendit (parser "testfiles/test5") (interpret (parser "testfiles/test5") nullstate)))
@@ -169,32 +171,3 @@
 (define (test26) (appendit (parser "testfiles/test26") (interpret (parser "testfiles/test26")nullstate) ))
 (define (test27) (appendit (parser "testfiles/test27") (interpret (parser "testfiles/test27")nullstate) ))
 (define (test28) (appendit (parser "testfiles/test28") (interpret (parser "testfiles/test28")nullstate) ))
-
-(define (interpret1) (interpret (parser "testfiles/test1") nullstate))
-(define (interpret2) (interpret (parser "testfiles/test2") nullstate))
-(define (interpret3) (interpret (parser "testfiles/test3") nullstate))
-(define (interpret4) (interpret (parser "testfiles/test4") nullstate))
-(define (interpret5) (interpret (parser "testfiles/test5") nullstate))
-(define (interpret6) (interpret (parser "testfiles/test6") nullstate))
-(define (interpret7) (interpret (parser "testfiles/test7") nullstate))
-(define (interpret8) (interpret (parser "testfiles/test8") nullstate))
-(define (interpret9) (interpret (parser "testfiles/test9") nullstate))
-(define (interpret10) (interpret (parser "testfiles/test10") nullstate))
-(define (interpret11) (interpret (parser "testfiles/test11") nullstate))
-(define (interpret12) (interpret (parser "testfiles/test12") nullstate))
-(define (interpret13) (interpret (parser "testfiles/test13") nullstate))
-(define (interpret14) (interpret (parser "testfiles/test14") nullstate))
-(define (interpret15) (interpret (parser "testfiles/test15") nullstate))
-(define (interpret16) (interpret (parser "testfiles/test16") nullstate))
-(define (interpret17) (interpret (parser "testfiles/test17") nullstate))
-(define (interpret18) (interpret (parser "testfiles/test18") nullstate))
-(define (interpret19) (interpret (parser "testfiles/test19") nullstate))
-(define (interpret20) (interpret (parser "testfiles/test20") nullstate))
-(define (interpret21) (interpret (parser "testfiles/test21") nullstate))
-(define (interpret22) (interpret (parser "testfiles/test22") nullstate))
-(define (interpret23) (interpret (parser "testfiles/test23") nullstate))
-(define (interpret24) (interpret (parser "testfiles/test24") nullstate))
-(define (interpret25) (interpret (parser "testfiles/test25") nullstate))
-(define (interpret26) (interpret (parser "testfiles/test26") nullstate))
-(define (interpret27) (interpret (parser "testfiles/test27") nullstate))
-(define (interpret28) (interpret (parser "testfiles/test28") nullstate))
