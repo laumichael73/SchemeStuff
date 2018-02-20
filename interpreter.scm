@@ -76,10 +76,10 @@
 
 
 ;when a variable is declared, before it is used, it is associated with the value 'declared rather than a number
-;m_state_add already checks that the variable isn't already declared
+;m_state_add already checks that the variable isn't already declared, throws error
 (define (declare var cstate) (m_state_add var 'declared cstate))
 
-;=
+
 ;checks that the value is already declared to something
 (define (equals var val cstate)
   (cond
@@ -107,22 +107,27 @@
     ((number?  input)  input)
     ((null? (firstelement  input)) (firstelement  input))
     ((number? (firstelement  input)) (firstelement  input))
+    ((list? (firstelement input)) (read (firstelement input) cstate)) ;(read (cdr input) cstate))
 
+    ;(operator <input1> <input2>)
     ((equal? '- (firstelement input)) (- (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
     ((equal? '/ (firstelement  input)) (floor (/ (read (secondelement input) cstate) (read (thirdelement  input) cstate))))
-    ((equal? '* (firstelement  input)) (* (read (cdr input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '+ (firstelement  input)) (+ (read (cdr input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '< (firstelement  input)) (< (read (cdr input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '> (firstelement  input)) (> (read (cdr input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '% (firstelement  input)) (modulo (read (cdr  input) cstate) (read (thirdelement  input) cstate)))
+    ((equal? '* (firstelement  input)) (* (read (secondelement input) cstate) (read (thirdelement input) cstate)))
+    ((equal? '+ (firstelement  input)) (+ (read (secondelement input) cstate) (read (thirdelement input) cstate)))
+    ((equal? '< (firstelement  input)) (< (read (secondelement input) cstate) (read (thirdelement input) cstate)))
+    ((equal? '> (firstelement  input)) (> (read (secondelement input) cstate) (read (thirdelement input) cstate)))
+    ((equal? '% (firstelement  input)) (modulo (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
     ;if the first statement is (var ....)
     ((equal? 'var (firstelement  input)) (read (cdr input) (declarevariable  (firstelement input) cstate)))
     ;if the first statement is (return ...)
-    ((equal? 'return (firstelement input)) (returnvalue input cstate))
-    ;binary operators
+    ((equal? 'return (firstelement input)) (returnvalue (secondelement input) cstate))
+    ;(#t (print "here2"))
+    ;
+    (else (read (cdr input))))) ;(declarevariable  (firstelement input) cstate)))))
+   
 
 
-;returns the updated state after declaring variable, called by input
+;returns the updated state after declaring variable, called by read
 ;(car cadr caddr)
 (define (declarevariable input cstate)
   (cond
@@ -131,12 +136,22 @@
      ;else it's a binary (var x 10)
      (else (equals (secondelement input) (thirdelement input) (declare (secondelement input) cstate)))))
 
+;(define (updatestate input cstate)
+;  (
+
 ;(return <expression>)
 (define (returnvalue input cstate)
   (cond
-    ((number? (secondelement input)) (secondelement input))
-    ((not (null? (m_state_lookup (secondelement input)) cstate)) (returnvalue (read (cdr input)) cstate))))
-  
+    ;(#t (print input))
+    ((number? input) input)
+    ((isVariable input cstate) (m_state_lookup input cstate ))
+    (read input cstate)))
+
+(define (isVariable var cstate)
+  (if (not (null? (m_state_lookup var cstate))) #t
+      #f))
+
+
 (define (unaryoperators  input cstate)
   (cond
     ((equal? 'return (firstelement  input)) (read (cdr input) cstate))
