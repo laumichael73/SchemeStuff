@@ -5,6 +5,8 @@
 ;main function is called by (interpret "<string of file path and name>")
 ;the string is in double quotes
 
+;it works for test cases 1 and 2, but fails for all the rest
+
 #lang racket
 (require "simpleParser.scm")
 
@@ -22,6 +24,7 @@
 ;----------------------------------------------------------------------------
 ; state manipulation methods: m_state_add, m_state_remove, and m_state_lookup
 ;----------------------------------------------------------------------------
+(define (initialstate) '(()()))
 
 ;gets the variable name list from a state
 (define (m_state cstate) (car cstate))
@@ -89,11 +92,10 @@
     (else (declaringerror))))
 
 
+;doesn't handle the following things:
 ;&&
 ;||
-;%
 ;! (something)
-
 ;if
 ;else
 ;while (cond) do ()
@@ -107,8 +109,11 @@
     ((number?  input)  input)
     ((null? (firstelement  input)) (firstelement  input))
     ((number? (firstelement  input)) (firstelement  input))
-    ((list? (firstelement input)) (read (firstelement input) cstate)) ;(read (cdr input) cstate))
+    ((and (list? (firstelement input)) (not (null?(cdr input)))) (read (firstelement input) cstate) (read (cdr input) cstate))
+    ((list? (firstelement input)) (read (firstelement input) cstate))
 
+    ;needs to test for unary operators, not sure how to make that work
+    
     ;(operator <input1> <input2>)
     ((equal? '- (firstelement input)) (- (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
     ((equal? '/ (firstelement  input)) (floor (/ (read (secondelement input) cstate) (read (thirdelement  input) cstate))))
@@ -118,17 +123,14 @@
     ((equal? '> (firstelement  input)) (> (read (secondelement input) cstate) (read (thirdelement input) cstate)))
     ((equal? '% (firstelement  input)) (modulo (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
     ;if the first statement is (var ....)
-    ((equal? 'var (firstelement  input)) (read (cdr input) (declarevariable  (firstelement input) cstate)))
+    ((equal? 'var (firstelement input)) (read (cdr input) (declarevariable input cstate)))
     ;if the first statement is (return ...)
-    ((equal? 'return (firstelement input)) (returnvalue (secondelement input) cstate))
-    ;(#t (print "here2"))
-    ;
-    (else (read (cdr input))))) ;(declarevariable  (firstelement input) cstate)))))
+    ((equal? 'return (firstelement input)) (read (cdr input) cstate))
+    (else (read (cdr input) cstate))))
    
 
 
 ;returns the updated state after declaring variable, called by read
-;(car cadr caddr)
 (define (declarevariable input cstate)
   (cond
      ;if it's a unary operator (var x)
@@ -136,13 +138,9 @@
      ;else it's a binary (var x 10)
      (else (equals (secondelement input) (thirdelement input) (declare (secondelement input) cstate)))))
 
-;(define (updatestate input cstate)
-;  (
-
 ;(return <expression>)
 (define (returnvalue input cstate)
   (cond
-    ;(#t (print input))
     ((number? input) input)
     ((isVariable input cstate) (m_state_lookup input cstate ))
     (read input cstate)))
@@ -161,8 +159,4 @@
     (else (print "here"))))
 
 
-;---------------------------------------------------------------------------------
-;ignore this stuff, it's only for testing to make sure stuff works
-;-----------------------------------------------------------------------------------
-(define nullstate '(()()))
-(define (initialstate) '(()()))
+;IT
