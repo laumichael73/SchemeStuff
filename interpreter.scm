@@ -14,9 +14,9 @@
 ;m_state has structure (var1... varn)
 ;m_values has structure (val1... valn)
 
-(define reassignerror "error- reassigning")
-(define error2 "error- using a variable before declaring")
-(define error3 "error- using a variable before assigning")
+(define (reassignerror) "error- reassigning")
+(define (declaringerror) "error- using a variable before declaring")
+(define (assigningerror) "error- using a variable before assigning")
 
 
 ;----------------------------------------------------------------------------
@@ -70,7 +70,6 @@
       (cons (car l1) (appendit (cdr l1) l2))))
 (define mycont (lambda (v) v))
 
-
 ;------------------------------------------------------------------------------------------
 ;interpreter methods
 ;--------------------------------------------------------------------------------------------
@@ -79,9 +78,8 @@
 ;(define (return var cstate))
 
 
-;when a function is declared, before it is used, it is associated with the value 'declared rather than a number
+;when a variable is declared, before it is used, it is associated with the value 'declared rather than a number
 ;m_state_add already checks that the variable isn't already declared
-;var
 (define (declare var cstate) (m_state_add var 'declared cstate))
 ;&&
 ;||
@@ -91,14 +89,13 @@
 (define (equals var val cstate)
   (cond
     ((equal? (m_state_lookup var cstate) '(declared)) (m_state_add var val (m_state_remove var cstate)))
-    (else error2)))
+    (else (declaringerror))))
 
 ;- negation
 
 ;if
 ;else
 ;while (cond) do ()
-
 
 (define (interpreter filepathandname)
   (interpret (parser filepathandname) (initialstate)))
@@ -107,33 +104,35 @@
   (cond
     ((null? lis) lis)
     ((number? lis) lis)
-    ((null? (car lis)) lis)
+    ((null? (car lis)) (car lis))
     ((number? (car lis)) (car lis))
-    ;here the car of lis isn't a number, need to figgure out what operator
-    ((list? (car lis)) (interpret (car lis) cstate))
+    ((list? (car lis)) (interpret (car lis) cstate) (interpret (cdr lis) cstate))
+    ;there's no third operator, find which operator it is
+    ((null? (cddr lis)) (unaryoperators lis cstate))
 
-    ;check if there's a third operator, if not then it's a unary operator
-    ;(car cadr caddr)
-    ((null? (cdr lis)); unary operators
-      ((equal? 'return (car lis)) (interpret (cdr lis) cstate))
-    
-    
     ;binary operators
-    ((equal? 'var (car lis)) (interpret (cddr lis) (declare (cadr lis) cstate))) 
+    ((equal? 'return (car lis)) (interpret (cdr lis) cstate))
+    ((equal? 'var (car lis)) (interpret (cdr lis) (declare (cadr lis) cstate)))
     ((equal? '- (car lis)) (- (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
     ((equal? '/ (car lis)) (floor (/ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate))))
-    ((equal? '* (car lis)) (* (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '+ (car lis)) (+ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '< (car lis)) (< (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '> (car lis)) (> (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '% (car lis)) (modulo (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '* (car lis)) (* (interpret (cdr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '+ (car lis)) (+ (interpret (cdr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '< (car lis)) (< (interpret (cdr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '> (car lis)) (> (interpret (cdr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '% (car lis)) (modulo (interpret (cdr lis) cstate) (interpret (caddr lis) cstate)))
     (else (interpret (cdr lis) cstate))))
     
 
 
 
 
-
+(define (unaryoperators lis cstate)
+  (cond
+    ((equal? 'return (car lis)) (interpret (cdr lis) cstate))
+    ((equal? '- (car lis)) (interpret (cdr lis) cstate))
+    ((equal? '! (car lis)) (interpret (cdr lis) cstate))
+    ((equal? 'var (car lis) (interpret (cdr lis) (declare (cadr lis) cstate))))
+    (else (print "here"))))
 
 
 ;---------------------------------------------------------------------------------
