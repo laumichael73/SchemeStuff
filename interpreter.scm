@@ -112,7 +112,7 @@
     ((and (list? (firstelement input)) (not (null?(cdr input)))) (read (firstelement input) cstate) (read (cdr input) cstate))
     ((list? (firstelement input)) (read (firstelement input) cstate))
 
-    ;needs to test for unary operators, not sure how to make that work
+    ;test for unary operators
     
     ;(operator <input1> <input2>)
     ((equal? '- (firstelement input)) (- (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
