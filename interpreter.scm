@@ -1,6 +1,10 @@
 ;Michael Folz
 ;Mark Gross
 
+
+;main function is called by (interpreter <string of file path and name>)
+;the string is in double quotes
+
 #lang racket
 (require "simpleParser.scm")
 
@@ -10,7 +14,7 @@
 ;m_state has structure (var1... varn)
 ;m_values has structure (val1... valn)
 
-(define error1 "error- reassigning")
+(define reassignerror "error- reassigning")
 (define error2 "error- using a variable before declaring")
 (define error3 "error- using a variable before assigning")
 
@@ -19,30 +23,38 @@
 ; state manipulation methods: m_state_add, m_state_remove, and m_state_lookup
 ;----------------------------------------------------------------------------
 
-;gets the state list from a state
+;gets the variable name list from a state
 (define (m_state cstate) (car cstate))
 ;gets the value list from the state
 (define (m_values cstate) (cadr cstate))
 ;constructs a state from a list of vars and vals
-;TODO check they're the same length? might become a problem in the future, idk
 (define (buildstate vars vals) (list vars vals))
+
+;adds the pair (var, val) to the state
+(define (state_append_tofront var val cstate)
+	(buildstate (cons var (m_state cstate))(cons val (m_values cstate))))
+
+;iterates through the next variable name and its value
+(define (recursestate cstate) (buildstate (cdr (m_state cstate)) (cdr (m_values cstate))))
 
 ;add a value to the state
 (define (m_state_add var val cstate)
   (cond
+    ;check if it's already defined, if not we're good so add it
     ((eq? (m_state_lookup var cstate) '()) (state_append_tofront var val cstate))
-    (else error1)))
+    (else reassignerror)))
 
 ;removes that var from the state, and the associated values with that label
-;doesn't assume that the value is used once, will remove all instances of that variable
+;doesn't assume that the value is used once, will remove all instances of that variable - not sure why we need this functionality but still
 (define (m_state_remove var cstate)
 	(cond
           ((null? (m_state cstate)) '(()()) )
-          ;if it's eq then recurse on (buildstate the next var, and the next val)
+          ;if it's eq then recurse and ignore the (var, val) pair
           ((eq? var (car (m_state cstate))) (m_state_remove var (recursestate cstate)))
 	(else (state_append_tofront (car (m_state cstate)) (car (m_values cstate)) (m_state_remove var (recursestate cstate))))))
 
 ;returns a list of vals associated with the var
+;if there isn't a val, then returns the empty list
 (define (m_state_lookup var cstate)
 	(cond
 	;if it's null then we got through the whole thing without finding the var, so it's not there
@@ -51,30 +63,19 @@
           (else (m_state_lookup var (recursestate cstate)))))
 
 ;cps append taken from class on 2/16
+;continuation passing style append, used in testing
+;TODO remove this
 (define (appendit l1 l2)
   (if (null? l1) (mycont l2)
       (cons (car l1) (appendit (cdr l1) l2))))
 (define mycont (lambda (v) v))
 
-(define (state_append_tofront var val cstate)
-	(buildstate (cons var (m_state cstate))(cons val (m_values cstate))))
 
-
-(define (recursestate cstate) (buildstate (cdr (m_state cstate)) (cdr (m_values cstate))))
 ;------------------------------------------------------------------------------------------
 ;interpreter methods
 ;--------------------------------------------------------------------------------------------
-;needs to check for:
-
-;Test 12: This code should give an error (using before declaring).
-;Test 13: This code should give an error (using before assigning).
-;Test 14: This code should give an error (redefining).  This is not a required error, but it would be nice if you
-;could catch these.
 
 ;return true and false rather than #t and #f
-
-
-;return
 ;(define (return var cstate))
 
 
@@ -92,18 +93,15 @@
     ((equal? (m_state_lookup var cstate) '(declared)) (m_state_add var val (m_state_remove var cstate)))
     (else error2)))
 
-;- (both subtraction and negative)
-;/
-;*
-;+
-;>
-;<
-
-;() units
+;- negation
 
 ;if
 ;else
 ;while (cond) do ()
+
+
+(define (interpreter filepathandname)
+  (interpret (parser filepathandname) (initialstate)))
 
 (define (interpret lis cstate)
   (cond
@@ -113,14 +111,17 @@
     ((number? (car lis)) (car lis))
     ;here the car of lis isn't a number, need to figgure out what operator
     ((list? (car lis)) (interpret (car lis) cstate))
-    ((equal? 'return (car lis)) (interpret (cdr lis) cstate))
-    ;unary operators
-    ;TODO this, but how to test it?
 
+    ;check if there's a third operator, if not then it's a unary operator
+    ;(car cadr caddr)
+    ((null? (cdr lis)); unary operators
+      ((equal? 'return (car lis)) (interpret (cdr lis) cstate))
+    
+    
     ;binary operators
     ((equal? 'var (car lis)) (interpret (cddr lis) (declare (cadr lis) cstate))) 
     ((equal? '- (car lis)) (- (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
-    ((equal? '/ (car lis)) (/ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
+    ((equal? '/ (car lis)) (floor (/ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate))))
     ((equal? '* (car lis)) (* (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
     ((equal? '+ (car lis)) (+ (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
     ((equal? '< (car lis)) (< (interpret (cadr lis) cstate) (interpret (caddr lis) cstate)))
@@ -140,6 +141,7 @@
 ;-----------------------------------------------------------------------------------
 (define teststate  '((x y z) (1 2 3)))
 (define nullstate '(()()))
+(define (initialstate) '(()()))
 
 
 
