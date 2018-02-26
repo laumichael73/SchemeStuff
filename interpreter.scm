@@ -150,6 +150,32 @@
       #f))
 
 
+
+
+
+;if it's none of those characters, throw error
+
+(define m.value.int
+  (lambda (in)
+    (cond
+      ((number? in) in)
+      ((eq? (operator in) '+) (+ (m.value.int (operand1 in)) (operand2 in )))
+      ((eq? (operator in) '-) (- (m.value.int (operand1 in)) (operand2 in )))
+      ((eq? (operator in) '*) (* (m.value.int (operand1 in) (operand2 in ))))
+      ((eq? '/ (operator in)) (quotient (m.value.int (operand1 in) (m.value.int(operand2 in )))))
+      ((eq? '% (operator in)) (remainder (m.value.int (operand1 in) (m.value.int (operand2 in )))))
+      (else (error "Undefined Operator")))))
+
+(define operator
+  (lambda (e)
+    (car e)))
+(define operand1 cadr)
+(define operand2 caddr)
+
+
+
+
+
 (define (unaryoperators  input cstate)
   (cond
     ((equal? 'return (firstelement  input)) (read (cdr input) cstate))
