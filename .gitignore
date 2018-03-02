@@ -3,4 +3,7 @@
 #interpreter.scm#1#
 JasonHarnack_HW1 (1).rkt
 removestuff
+/compiled
+interpreter.scm~
+
 
