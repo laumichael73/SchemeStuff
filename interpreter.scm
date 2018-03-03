@@ -5,16 +5,17 @@
 ;main function is called by (interpret "<string of file path and name>")
 ;the string is in double quotes
 
-;it works for test cases 1 and 2, but fails for all the rest
 
 #lang racket
 (require "simpleParser.scm")
 
 ;we're going with the ((var1 var2 ...) (val1 val2...)) organization since it helps later...? hopefully?
 ;state is a list of two lists, m_state and m_values
-;cstate- "current state" has structure (m_state m_values)
-;m_state has structure (var1... varn)
-;m_values has structure (val1... valn)
+;cstate is the current state, and is a list of layers
+;each layer has the structure
+;  ((var1 var 2...) (val1 val2...))
+
+;the state is a list of layers
 
 (define (reassignerror) "error- reassigning")
 (define (declaringerror) "error- using a variable before declaring")
@@ -24,55 +25,79 @@
 ;----------------------------------------------------------------------------
 ; state manipulation methods: m_state_add, m_state_remove, and m_state_lookup
 ;----------------------------------------------------------------------------
-(define (initialstate) '(()()))
+(define initialstate '((()())))
+(define emptylayer '(()()))
 
 ;gets the variable name list from a state
-(define (m_state cstate) (car cstate))
+(define (vars layer) (car layer))
 ;gets the value list from the state
-(define (m_values cstate) (cadr cstate))
-;constructs a state from a list of vars and vals
-(define (buildstate vars vals) (list vars vals))
+(define (vals layer) (cadr layer))
+;constructs a layer from a list of vars and vals
+(define (buildlayer vars vals) (list vars vals))
 
 (define (firstelement input) (car input))
+(define (restof input) (cdr input))
 (define (secondelement input) (cadr input))
 (define (thirdelement input) (caddr input))
 
-;adds the pair (var, val) to the state
-(define (state_append_tofront var val cstate)
-	(buildstate (cons var (m_state cstate))(cons val (m_values cstate))))
+;effectively same as peek, returns a layer from a state
+(define (getTopLayer cstate)
+  (firstelement cstate))
 
-;iterates through the next variable name and its value
-(define (recursestate cstate) (buildstate (cdr (m_state cstate)) (cdr (m_values cstate))))
+;returns all the layers except the top one
+(define (getNextLayers cstate)
+  (restof cstate))
 
-;add a value to the state
-(define (m_state_add var val cstate)
+         
+;adds an empty layer to the input state
+(define (add_layer layer cstate)
+    (append (list layer) (list cstate)))
+
+;returns the layer after we add the pair (x val) to the input layer
+;throws error if the value is already used or declared
+(define (addto_layer x val layer)
   (cond
-    ;check if it's already defined, if not we're good so add it
-    ((eq? (m_state_lookup var cstate) '()) (state_append_tofront var val cstate))
-    (else reassignerror)))
+    ((not (null? (layer_lookup x layer))) (reassignerror))
+    (else (buildlayer (cons x (vars layer)) (cons val (vals layer))))))
 
 ;removes that var from the state, and the associated values with that label
-;doesn't assume that the value is used once, will remove all instances of that variable - not sure why we need this functionality but still
-(define (m_state_remove var cstate)
-	(cond
-          ((null? (m_state cstate)) '(()()) )
-          ;if it's eq then recurse and ignore the (var, val) pair
-          ((eq? var (car (m_state cstate))) (m_state_remove var (recursestate cstate)))
-	(else (state_append_tofront (car (m_state cstate)) (car (m_values cstate)) (m_state_remove var (recursestate cstate))))))
+;doesn't assume that there is only one instance of the var, removes all of them
+(define (removefrom_layer var layer)
+  (cond
+    ((null? (vars layer)) '())
+    ((equal? var (firstelement (vars layer))) (removefrom_layer var (buildlayer (restof (vars layer)) (restof (vals layer)))))
+    (else
+     (appendto_layer (firstelement (vars layer)) (firstelement (vals layer)) (removefrom_layer var (buildlayer (restof (vars layer)) (restof (vals layer))))))))
+;helper for removefrom, not to be called by anything else since it doesn't check
+(define (appendto_layer x val layer)
+  (cond
+    ((null? layer) (buildlayer (list x) (list val)))
+    (else (buildlayer (cons x (vars layer)) (cons val (vals layer))))))
 
-;returns a list of vals associated with the var
+;returns the vals associated with the var in the given layer of the state
 ;if there isn't a val, then returns the empty list
-(define (m_state_lookup var cstate)
-	(cond
-	;if it's null then we got through the whole thing without finding the var, so it's not there
-          ((null? (m_state cstate)) '()) ;didn't find that var in the state
-          ((eq? var (car (m_state cstate))) (cons (car(m_values cstate))  (m_state_lookup var (recursestate cstate))))
-          (else (m_state_lookup var (recursestate cstate)))))
+(define (layer_lookup variable layer)
+  (cond
+    ((null? (vars layer)) '())
+    ((equal? variable (firstelement (vars layer))) (firstelement (vals layer)))
+    (else (layer_lookup variable (buildlayer (restof (vars layer)) (restof (vals layer)))))))
 
+
+(define (m_state_lookup var state)
+    (if (null? state) '() 
+    (if (null? (layer_lookup var (getTopLayer state))) (layer_lookup var (getTopLayer state))
+        (m_state_lookup var (getNextLayers (state))))))
+   
+(define (m_state_add var val cstate)
+  (addto_layer var val (getTopLayer cstate)))
+
+(define (m_state_remove var cstate)
+  (removefrom_layer var (getTopLayer cstate)))
 
 ;------------------------------------------------------------------------------------------
 ;interpreter methods
 ;--------------------------------------------------------------------------------------------
+
 
 ;return true and false rather than #t and #f
 ;(define (return var cstate))
@@ -101,7 +126,7 @@
 ;while (cond) do ()
 
 (define (interpret filepathandname)
-  (read (parser filepathandname) (initialstate)))
+  (read (parser filepathandname) initialstate))
 
 (define (read  input cstate)
   (cond
@@ -185,4 +210,6 @@
     (else (print "here"))))
 
 
-;IT
+
+
+(define testlayer '((t v g y s g thsi x) (1 2 3 4 5 6 7 8)))
