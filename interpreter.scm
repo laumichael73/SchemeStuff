@@ -5,8 +5,7 @@
 ;main function is called by (interpret "<string of file path and name>")
 ;the string is in double quotes
 
-
-#lang racket
+#lang scheme
 (require "simpleParser.scm")
 
 ;we're going with the ((var1 var2 ...) (val1 val2...)) organization since it helps later...? hopefully?
@@ -16,6 +15,8 @@
 ;  ((var1 var 2...) (val1 val2...))
 
 ;the state is a list of layers
+;   (layer1 layer2 ... lastlayer)
+
 
 (define (reassignerror) "error- reassigning")
 (define (declaringerror) "error- using a variable before declaring")
@@ -48,7 +49,7 @@
 (define (getNextLayers cstate)
   (restof cstate))
 
-         
+
 ;adds an empty layer to the input state
 (define (add_layer layer cstate)
     (append (list layer) (list cstate)))
@@ -84,10 +85,10 @@
 
 
 (define (m_state_lookup var state)
-    (if (null? state) '() 
+    (if (null? state) '()
     (if (null? (layer_lookup var (getTopLayer state))) (layer_lookup var (getTopLayer state))
         (m_state_lookup var (getNextLayers (state))))))
-   
+
 (define (m_state_add var val cstate)
   (addto_layer var val (getTopLayer cstate)))
 
@@ -138,7 +139,7 @@
     ((list? (firstelement input)) (read (firstelement input) cstate))
 
     ;test for unary operators
-    
+
     ;(operator <input1> <input2>)
     ((equal? '- (firstelement input)) (- (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
     ((equal? '/ (firstelement  input)) (floor (/ (read (secondelement input) cstate) (read (thirdelement  input) cstate))))
@@ -152,7 +153,7 @@
     ;if the first statement is (return ...)
     ((equal? 'return (firstelement input)) (read (cdr input) cstate))
     (else (read (cdr input) cstate))))
-   
+
 
 
 ;returns the updated state after declaring variable, called by read
