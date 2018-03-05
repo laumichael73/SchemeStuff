@@ -26,8 +26,8 @@
 ;----------------------------------------------------------------------------
 ; state manipulation methods: m_state_add, m_state_remove, and m_state_lookup
 ;----------------------------------------------------------------------------
-(define initialstate '((()())))
-(define emptylayer '(()()))
+;lookup returns a "true" or "false" if that's what the value is defined as
+
 
 ;gets the variable name list from a state
 (define (vars layer) (car layer))
@@ -36,10 +36,20 @@
 ;constructs a layer from a list of vars and vals
 (define (buildlayer vars vals) (list vars vals))
 
-(define (firstelement input) (car input))
-(define (restof input) (cdr input))
-(define (secondelement input) (cadr input))
-(define (thirdelement input) (caddr input))
+
+(define initialstate '((()())))
+(define emptylayer '(()()))
+(define testlayer '((t v g y s g thsi x) (1 2 3 4 5 6 7 8)))
+(define teststate (list testlayer)) ;TODO remove this bad boy
+
+(define firstelement car)
+(define restof cdr)
+(define secondelement cadr)
+(define thirdelement caddr)
+(define operator car )
+(define operand1 cadr)
+(define operand2 caddr)
+
 
 ;effectively same as peek, returns a layer from a state
 (define (getTopLayer cstate)
@@ -48,7 +58,6 @@
 ;returns all the layers except the top one
 (define (getNextLayers cstate)
   (restof cstate))
-
 
 ;adds an empty layer to the input state
 (define (add_layer layer cstate)
@@ -83,7 +92,7 @@
     ((equal? variable (firstelement (vars layer))) (firstelement (vals layer)))
     (else (layer_lookup variable (buildlayer (restof (vars layer)) (restof (vals layer)))))))
 
-
+;for looking up a value
 (define (m_state_lookup var state)
     (if (null? state) '()
     (if (null? (layer_lookup var (getTopLayer state))) (layer_lookup var (getTopLayer state))
@@ -94,6 +103,11 @@
 
 (define (m_state_remove var cstate)
   (removefrom_layer var (getTopLayer cstate)))
+
+  (define (m_boolean expression cstate)
+    (cond
+      ((null? (getTopLayer cstate)))
+
 
 ;------------------------------------------------------------------------------------------
 ;interpreter methods
@@ -108,7 +122,6 @@
 ;m_state_add already checks that the variable isn't already declared, throws error
 (define (declare var cstate) (m_state_add var 'declared cstate))
 
-
 ;checks that the value is already declared to something
 (define (equals var val cstate)
   (cond
@@ -117,14 +130,38 @@
     ;if its not declared then need to declare before using
     (else (declaringerror))))
 
+;returns the updated state after declaring variable, called by read
+(define (declarevariable input cstate)
+  (cond
+    ;if it's a unary operator (var x)
+    ((null? (cddr input)) (declare (secondelement input) cstate))
+    ;else it's a binary (var x 10)
+    (else (equals (secondelement input) (thirdelement input) (declare (secondelement input) cstate)))))
 
-;doesn't handle the following things:
-;&&
-;||
+;(return <expression>)
+(define (returnvalue input cstate)
+  (cond
+    ((number? input) input)
+    ((isVariable input cstate) (m_state_lookup input cstate ))
+    (else (read input cstate))))
+
+;check if something is a variable or not
+;need this since we can declare variables that aren't just letters
+(define (isVariable var cstate)
+  (if (not (null? (m_state_lookup var cstate))) #t
+    #f))
+
+
+
+
+
+;need to add:
 ;! (something)
 ;if
 ;else
 ;while (cond) do ()
+
+
 
 (define (interpret filepathandname)
   (read (parser filepathandname) initialstate))
@@ -140,14 +177,12 @@
 
     ;test for unary operators
 
-    ;(operator <input1> <input2>)
-    ((equal? '- (firstelement input)) (- (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
-    ((equal? '/ (firstelement  input)) (floor (/ (read (secondelement input) cstate) (read (thirdelement  input) cstate))))
-    ((equal? '* (firstelement  input)) (* (read (secondelement input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '+ (firstelement  input)) (+ (read (secondelement input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '< (firstelement  input)) (< (read (secondelement input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '> (firstelement  input)) (> (read (secondelement input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '% (firstelement  input)) (modulo (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
+    ;if the expression needs to be evaluated to int
+      ;call intevaluate
+
+    ;if the expression needs to be evaluated to boolean
+      ;call booleanevaluate
+
     ;if the first statement is (var ....)
     ((equal? 'var (firstelement input)) (read (cdr input) (declarevariable input cstate)))
     ;if the first statement is (return ...)
@@ -156,60 +191,40 @@
 
 
 
-;returns the updated state after declaring variable, called by read
-(define (declarevariable input cstate)
+
+;TODO return 'true' or 'false' rather than #t or #f
+(define (booleanevaluate expression cstate)
   (cond
-     ;if it's a unary operator (var x)
-     ((null? (cddr input)) (declare (secondelement input) cstate))
-     ;else it's a binary (var x 10)
-     (else (equals (secondelement input) (thirdelement input) (declare (secondelement input) cstate)))))
+    ((equal? '< (firstelement  input))
+      (< (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
+    ((equal? '> (firstelement  expression))
+      (> (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
+    ((equal? '&& (firstelement expression))
+      (and (booleanevaluate (secondelement expression) cstate)))
+    ((equal? '|| (firstelement expression))
+      (or (booleanevaluate (secondelement expression) cstate))))
 
-;(return <expression>)
-(define (returnvalue input cstate)
+
+(define (intevaluate expression cstate)
   (cond
-    ((number? input) input)
-    ((isVariable input cstate) (m_state_lookup input cstate ))
-    (read input cstate)))
-
-(define (isVariable var cstate)
-  (if (not (null? (m_state_lookup var cstate))) #t
-      #f))
-
-
-
-
-
-;if it's none of those characters, throw error
-
-(define (m.value.int in)
-    (cond
-      ((number? in) in)
-      ((eq? (operator in) '+) (+ (m.value.int (operand1 in)) (operand2 in )))
-      ((eq? (operator in) '-) (- (m.value.int (operand1 in)) (operand2 in )))
-      ((eq? (operator in) '*) (* (m.value.int (operand1 in) (operand2 in ))))
-      ((eq? '/ (operator in)) (quotient (m.value.int (operand1 in) (m.value.int(operand2 in )))))
-      ((eq? '% (operator in)) (remainder (m.value.int (operand1 in) (m.value.int (operand2 in )))))
-      (else (error "Undefined Operator"))))
-
-(define operator
-  (lambda (e)
-    (car e)))
-(define operand1 cadr)
-(define operand2 caddr)
+    ((equal? '- (firstelement expression))
+      (- (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
+    ((equal? '/ (firstelement  expression))
+      (floor (/ (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate))))
+    ((equal? '* (firstelement  expression))
+      * (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
+    ((equal? '+ (firstelement  expression))
+      (+ (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
+    ((equal? '% (firstelement  expression))
+      (modulo (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
+    (else (error "Undefined Operator")))
 
 
-
-
-
-(define (unaryoperators  input cstate)
+;TODO fix this guy, he doesn't do anything
+(define (unaryoperator  expression cstate)
   (cond
-    ((equal? 'return (firstelement  input)) (read (cdr input) cstate))
-    ((equal? '- (firstelement  input)) (read (cdr  input) cstate))
-    ((equal? '! (firstelement  input)) (read (cdr  input) cstate))
-    ((equal? 'var (firstelement  input) (read (cdr  input) (declare (secondelement  input) cstate))))
-    (else (print "here"))))
-
-
-
-
-(define testlayer '((t v g y s g thsi x) (1 2 3 4 5 6 7 8)))
+    ((equal? 'return (firstelement  input)) (read (secondelement input) cstate))
+    ((equal? '- (firstelement  input)) (read (secondelement  input) cstate))
+    ((equal? '! (firstelement  input)) (read (secondelement  input) cstate))
+    ((equal? 'var (firstelement  input) (read (secondelement  input) (declare (secondelement  input) cstate))))
+    (else (error "undefined unary operator"))))
