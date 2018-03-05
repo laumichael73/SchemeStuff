@@ -5,7 +5,7 @@
 ;main function is called by (interpret "<string of file path and name>")
 ;the string is in double quotes
 
-#lang scheme
+#lang racket
 (require "simpleParser.scm")
 
 ;we're going with the ((var1 var2 ...) (val1 val2...)) organization since it helps later...? hopefully?
@@ -21,6 +21,7 @@
 (define (reassignerror) "error- reassigning")
 (define (declaringerror) "error- using a variable before declaring")
 (define (assigningerror) "error- using a variable before assigning")
+(define (undefinedexpressionerror) "error- undefined expression")
 
 
 ;----------------------------------------------------------------------------
@@ -104,9 +105,10 @@
 (define (m_state_remove var cstate)
   (removefrom_layer var (getTopLayer cstate)))
 
+;not sure how to do this one
   (define (m_boolean expression cstate)
     (cond
-      ((null? (getTopLayer cstate)))
+      ((null? (getTopLayer cstate)))))
 
 
 ;------------------------------------------------------------------------------------------
@@ -195,36 +197,39 @@
 ;TODO return 'true' or 'false' rather than #t or #f
 (define (booleanevaluate expression cstate)
   (cond
-    ((equal? '< (firstelement  input))
+    ((equal? '< (firstelement  expression))
       (< (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
     ((equal? '> (firstelement  expression))
       (> (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
     ((equal? '&& (firstelement expression))
       (and (booleanevaluate (secondelement expression) cstate)))
     ((equal? '|| (firstelement expression))
-      (or (booleanevaluate (secondelement expression) cstate))))
+      (or (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))))
 
 
 (define (intevaluate expression cstate)
   (cond
+    ((number? expression) expression)
+    ((list? (firstelement expression)) (intevaluate (firstelement expression) cstate))
+    ((number? (firstelement expression)) (firstelement expression))
     ((equal? '- (firstelement expression))
       (- (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
     ((equal? '/ (firstelement  expression))
       (floor (/ (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate))))
     ((equal? '* (firstelement  expression))
-      * (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
+      (* (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
     ((equal? '+ (firstelement  expression))
       (+ (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
     ((equal? '% (firstelement  expression))
       (modulo (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
-    (else (error "Undefined Operator")))
+    (else (undefinedexpressionerror))))
 
 
 ;TODO fix this guy, he doesn't do anything
 (define (unaryoperator  expression cstate)
   (cond
-    ((equal? 'return (firstelement  input)) (read (secondelement input) cstate))
-    ((equal? '- (firstelement  input)) (read (secondelement  input) cstate))
-    ((equal? '! (firstelement  input)) (read (secondelement  input) cstate))
-    ((equal? 'var (firstelement  input) (read (secondelement  input) (declare (secondelement  input) cstate))))
+    ((equal? 'return (firstelement  expression)) (read (secondelement expression) cstate))
+    ((equal? '- (firstelement  expression)) (read (secondelement  expression) cstate))
+    ((equal? '! (firstelement  expression)) (read (secondelement  expression) cstate))
+    ((equal? 'var (firstelement  expression) (read (secondelement  expression) (declare (secondelement  expression) cstate))))
     (else (error "undefined unary operator"))))
