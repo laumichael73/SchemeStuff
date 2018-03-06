@@ -165,8 +165,8 @@
   (lambda ()
      (let* ((firstoperand (value-parse))
 	    (op (get-next-symbol)))
-       (if (and (eq? (car op) 'BINARY-OP) 
-                (or (eq? (cdr op) '==) 
+       (if (and (eq? (car op) 'BINARY-OP)
+                (or (eq? (cdr op) '==)
                     (eq? (cdr op) '<)
                     (eq? (cdr op) '>)
                     (eq? (cdr op) '<=)
@@ -186,7 +186,7 @@
           (begin
             (unget-next-symbol)
             (cons 'var lhs))))))
-    
+
 
 ; parse an assignment statement: a left-hand-side followed by an = followed by a value
 
@@ -338,5 +338,3 @@
           ((eq? (car firstsymbol) 'ID) (cdr firstsymbol))
           ((eq? (car firstsymbol) 'BOOLEAN) (cdr firstsymbol))
           (else (error 'parser "Unknown statmement")))));)
-
-

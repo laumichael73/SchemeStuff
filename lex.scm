@@ -41,7 +41,7 @@
 
 ; read the next character from the file
 
-(define readchar 
+(define readchar
   (lambda (port)
     (if saved-last-char
         (begin
@@ -79,7 +79,7 @@
 
 ; return a lexeme with the next read symbol
 
-(define return-id-lex 
+(define return-id-lex
   (lambda (id)
     (if (memq id reserved-word-list)
         (if (or (eq? id 'false) (eq? id 'true))

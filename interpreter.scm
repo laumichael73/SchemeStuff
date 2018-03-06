@@ -210,12 +210,6 @@
     ((equal? 'var (firstelement  input) (read (cdr  input) (declare (secondelement  input) cstate))))
     (else (print "here"))))
 
-;from test answers
-(define (m_state_for statement1 condition statement2 statement3 cstate)
-  (if (booleanevaluate condition (m_state statement1 state))
-    (m_state_for '() condition statement2 statement3 (m_state statement2 (m_state statement3 (m_state statement1 cstate))))
-    ;else
-    (m_state (statement1 cstate))))
 
 
 (define testlayer '((t v g y s g thsi x) (1 2 3 4 5 6 7 8)))
