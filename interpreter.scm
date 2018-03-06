@@ -22,6 +22,7 @@
 (define (declaringerror) "error- using a variable before declaring")
 (define (assigningerror) "error- using a variable before assigning")
 (define (undefinedexpressionerror) "error- undefined expression")
+(define (undefinedunaryoperator) "error- undefined unary operator")
 
 
 ;----------------------------------------------------------------------------
@@ -94,10 +95,12 @@
     (else (layer_lookup variable (buildlayer (restof (vars layer)) (restof (vals layer)))))))
 
 ;for looking up a value
+;TODO fix this
 (define (m_state_lookup var state)
-    (if (null? state) '()
-    (if (null? (layer_lookup var (getTopLayer state))) (layer_lookup var (getTopLayer state))
-        (m_state_lookup var (getNextLayers (state))))))
+    (cond
+      ((null? state) '())
+      ((not (null? (layer_lookup var (getTopLayer state)))) (layer_lookup var (getTopLayer state)))
+      (else (m_state_lookup var (getNextLayers state)))))
 
 (define (m_state_add var val cstate)
   (addto_layer var val (getTopLayer cstate)))
@@ -105,7 +108,7 @@
 (define (m_state_remove var cstate)
   (removefrom_layer var (getTopLayer cstate)))
 
-;not sure how to do this one
+;not sure how to do this one TODO remove this?
   (define (m_boolean expression cstate)
     (cond
       ((null? (getTopLayer cstate)))))
@@ -158,6 +161,7 @@
 
 
 ;need to add:
+;everything from 2
 ;! (something)
 ;if
 ;else
@@ -197,6 +201,9 @@
 ;TODO return 'true' or 'false' rather than #t or #f
 (define (booleanevaluate expression cstate)
   (cond
+    ;((member? expression '(TRUE True true)) #t)
+    ;((member? expression '(FALSE False false) #f))
+    
     ((equal? '< (firstelement  expression))
       (< (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
     ((equal? '> (firstelement  expression))
@@ -204,9 +211,10 @@
     ((equal? '&& (firstelement expression))
       (and (booleanevaluate (secondelement expression) cstate)))
     ((equal? '|| (firstelement expression))
-      (or (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))))
+      (or (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
+    ))
 
-
+;TODO lookup variables
 (define (intevaluate expression cstate)
   (cond
     ((number? expression) expression)
@@ -232,4 +240,4 @@
     ((equal? '- (firstelement  expression)) (read (secondelement  expression) cstate))
     ((equal? '! (firstelement  expression)) (read (secondelement  expression) cstate))
     ((equal? 'var (firstelement  expression) (read (secondelement  expression) (declare (secondelement  expression) cstate))))
-    (else (error "undefined unary operator"))))
+    (else (undefinedunaryoperator))))
