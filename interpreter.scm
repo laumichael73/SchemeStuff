@@ -48,7 +48,8 @@
 (define (getNextLayers cstate)
   (restof cstate))
 
-         
+
+
 ;adds an empty layer to the input state
 (define (add_layer layer cstate)
     (append (list layer) (list cstate)))
@@ -84,10 +85,10 @@
 
 
 (define (m_state_lookup var state)
-    (if (null? state) '() 
+    (if (null? state) '()
     (if (null? (layer_lookup var (getTopLayer state))) (layer_lookup var (getTopLayer state))
         (m_state_lookup var (getNextLayers (state))))))
-   
+
 (define (m_state_add var val cstate)
   (addto_layer var val (getTopLayer cstate)))
 
@@ -138,7 +139,7 @@
     ((list? (firstelement input)) (read (firstelement input) cstate))
 
     ;test for unary operators
-    
+
     ;(operator <input1> <input2>)
     ((equal? '- (firstelement input)) (- (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
     ((equal? '/ (firstelement  input)) (floor (/ (read (secondelement input) cstate) (read (thirdelement  input) cstate))))
@@ -152,7 +153,7 @@
     ;if the first statement is (return ...)
     ((equal? 'return (firstelement input)) (read (cdr input) cstate))
     (else (read (cdr input) cstate))))
-   
+
 
 
 ;returns the updated state after declaring variable, called by read
@@ -209,7 +210,12 @@
     ((equal? 'var (firstelement  input) (read (cdr  input) (declare (secondelement  input) cstate))))
     (else (print "here"))))
 
-
+;from test answers
+(define (m_state_for statement1 condition statement2 statement3 cstate)
+  (if (booleanevaluate condition (m_state statement1 state))
+    (m_state_for '() condition statement2 statement3 (m_state statement2 (m_state statement3 (m_state statement1 cstate))))
+    ;else
+    (m_state (statement1 cstate))))
 
 
 (define testlayer '((t v g y s g thsi x) (1 2 3 4 5 6 7 8)))
