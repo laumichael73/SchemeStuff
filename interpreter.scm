@@ -100,15 +100,17 @@
 ;interpreter methods
 ;--------------------------------------------------------------------------------------------
 
+;public void main
+(define (interpret filepathandname)
+  (read (parser filepathandname) initialstate))
 
-;return true and false rather than #t and #f
-;(define (return var cstate))
-
+;
+;Declaring a variable
+;
 
 ;when a variable is declared, before it is used, it is associated with the value 'declared rather than a number
 ;m_state_add already checks that the variable isn't already declared, throws error
 (define (declare var cstate) (m_state_add var 'declared cstate))
-
 
 ;checks that the value is already declared to something
 (define (equals var val cstate)
@@ -119,9 +121,7 @@
     (else (declaringerror))))
 
 
-(define (interpret filepathandname)
-  (read (parser filepathandname) initialstate))
-
+;reads whatever the unput is and sends to the helper methods depending on what is needed
 (define (read  input cstate)
   (cond
     ((null?  input)  input)
@@ -133,14 +133,10 @@
 
     ;test for unary operators
 
+    ;test for binary operators
     ;(operator <input1> <input2>)
-    ((equal? '- (firstelement input)) (- (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
-    ((equal? '/ (firstelement  input)) (floor (/ (read (secondelement input) cstate) (read (thirdelement  input) cstate))))
-    ((equal? '* (firstelement  input)) (* (read (secondelement input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '+ (firstelement  input)) (+ (read (secondelement input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '% (firstelement  input)) (modulo (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
+    
     ;if the first statement is (var ....)
-    ((equal? 'var (firstelement input)) (read (cdr input) (declarevariable input cstate)))
     ;if the first statement is (return ...)
     ((equal? 'return (firstelement input)) (read (cdr input) cstate))
     (else (read (cdr input) cstate))))
@@ -159,15 +155,16 @@
 (define (returnvalue input cstate)
   (cond
     ((number? input) input)
-    ((isVariable input cstate) (m_state_lookup input cstate ))
+    ((isVariable? input cstate) (m_state_lookup input cstate ))
     (read input cstate)))
 
-(define (isVariable var cstate)
+(define (isVariable? var cstate)
   (if (not (null? (m_state_lookup var cstate))) #t
       #f))
 
 
 ;TODO return 'true' or 'false' rather than #t or #f
+;if (booleanevaluate) 'true' else 'false'
 (define (booleanevaluate expression cstate)
   (cond
     ((equal? '< (firstelement  expression))
@@ -182,38 +179,25 @@
 
 (define (intevaluate expression cstate)
   (cond
+    ((number? expression) expression)
+    ((isVariable? expression cstate) (m_state_lookup expression cstate))
     ((equal? '- (firstelement expression))
       (- (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
     ((equal? '/ (firstelement  expression))
       (floor (/ (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate))))
     ((equal? '* (firstelement  expression))
-      * (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
+      (* (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
     ((equal? '+ (firstelement  expression))
       (+ (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
     ((equal? '% (firstelement  expression))
       (modulo (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
-    (undefinederror))
+    (else (undefinederror))))
 
-|# taken from harold, don't use
-TODO remove this guy
-(define m.value.int
-  (lambda (in)
-    (cond
-      ((number? in) in)
-      ((eq? (operator in) '+) (+ (m.value.int (operand1 in)) (operand2 in )))
-      ((eq? (operator in) '-) (- (m.value.int (operand1 in)) (operand2 in )))
-      ((eq? (operator in) '*) (* (m.value.int (operand1 in) (operand2 in ))))
-      ((eq? '/ (operator in)) (quotient (m.value.int (operand1 in) (m.value.int(operand2 in )))))
-      ((eq? '% (operator in)) (remainder (m.value.int (operand1 in) (m.value.int (operand2 in )))))
-      (else (error "Undefined Operator")))))
+;returns the state after we evaluate the expression
+(define (m_state expression cstate)
+  (cond
+    ((equal? 'var (firstelement input)) (read (cdr input) (declarevariable input cstate)))
 
-
-(define operator
-  (lambda (e)
-    (car e)))
-(define operand1 cadr)
-(define operand2 caddr)
-#|
 
 
 
@@ -226,6 +210,13 @@ TODO remove this guy
     ((equal? '! (firstelement  input)) (read (cdr  input) cstate))
     ((equal? 'var (firstelement  input) (read (cdr  input) (declare (secondelement  input) cstate))))
     (else (print "here"))))
+
+;helper for the read method, to determine which helper method to call
+(define (ismember? a lis)
+  (cond
+    ((null? lis) #f)
+    ((equal? a (car lis)) #t)
+    (ismember? a (cdr lis))))
 
 ;------------------------------------------------------------
 ;flow control methods
