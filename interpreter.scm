@@ -124,12 +124,8 @@
 ;reads whatever the unput is and sends to the helper methods depending on what is needed
 (define (read  input cstate)
   (cond
-    ((null?  input)  input)
-    ((number?  input)  input)
-    ((null? (firstelement  input)) (firstelement  input))
-    ((number? (firstelement  input)) (firstelement  input))
-    ((and (list? (firstelement input)) (not (null?(cdr input)))) (read (firstelement input) cstate) (read (cdr input) cstate))
-    ((list? (firstelement input)) (read (firstelement input) cstate))
+    ((null?  input))
+    (else (read (cdr input) (m_state (car input) c_state)))))
 
     ;test for unary operators
 
