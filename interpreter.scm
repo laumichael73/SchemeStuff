@@ -150,10 +150,10 @@
 ;returns the updated state after declaring variable, called by read
 (define (declarevariable input cstate)
   (cond
-     ;if it's a unary operator (var x)
-     ((null? (cddr input)) (declare (secondelement input) cstate))
-     ;else it's a binary (var x 10)
-     (else (equals (secondelement input) (thirdelement input) (declare (secondelement input) cstate)))))
+    ;if it's a unary operator (var x)
+    ((null? (cddr input)) (declare (secondelement input) cstate))
+    ;else it's a binary (var x 10)
+    (else (equals (secondelement input) (thirdelement input) (declare (secondelement input) cstate)))))
 
 ;(return <expression>)
 (define (returnvalue input cstate)
@@ -171,13 +171,13 @@
 (define (booleanevaluate expression cstate)
   (cond
     ((equal? '< (firstelement  expression))
-      (< (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
+     (< (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
     ((equal? '> (firstelement  expression))
-      (> (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
+     (> (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
     ((equal? '&& (firstelement expression))
-      (and (booleanevaluate (secondelement expression) cstate)))
+     (and (booleanevaluate (secondelement expression) cstate)))
     ((equal? '|| (firstelement expression))
-      (or (booleanevaluate (secondelement expression) cstate)))))
+     (or (booleanevaluate (secondelement expression) cstate)))))
 
 
 (define (intevaluate expression cstate)
@@ -194,6 +194,8 @@
       (modulo (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
     (undefinederror))
 
+|# taken from harold, don't use
+TODO remove this guy
 (define m.value.int
   (lambda (in)
     (cond
@@ -205,11 +207,13 @@
       ((eq? '% (operator in)) (remainder (m.value.int (operand1 in) (m.value.int (operand2 in )))))
       (else (error "Undefined Operator")))))
 
+
 (define operator
   (lambda (e)
     (car e)))
 (define operand1 cadr)
 (define operand2 caddr)
+#|
 
 
 
