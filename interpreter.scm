@@ -20,6 +20,7 @@
 (define (reassignerror) "error- reassigning")
 (define (declaringerror) "error- using a variable before declaring")
 (define (assigningerror) "error- using a variable before assigning")
+(define (undefinederror) "Undefined Operator")
 
 
 ;----------------------------------------------------------------------------
@@ -118,14 +119,6 @@
     (else (declaringerror))))
 
 
-;doesn't handle the following things:
-;&&
-;||
-;! (something)
-;if
-;else
-;while (cond) do ()
-
 (define (interpret filepathandname)
   (read (parser filepathandname) initialstate))
 
@@ -145,8 +138,6 @@
     ((equal? '/ (firstelement  input)) (floor (/ (read (secondelement input) cstate) (read (thirdelement  input) cstate))))
     ((equal? '* (firstelement  input)) (* (read (secondelement input) cstate) (read (thirdelement input) cstate)))
     ((equal? '+ (firstelement  input)) (+ (read (secondelement input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '< (firstelement  input)) (< (read (secondelement input) cstate) (read (thirdelement input) cstate)))
-    ((equal? '> (firstelement  input)) (> (read (secondelement input) cstate) (read (thirdelement input) cstate)))
     ((equal? '% (firstelement  input)) (modulo (read (secondelement input) cstate) (read (thirdelement  input) cstate)))
     ;if the first statement is (var ....)
     ((equal? 'var (firstelement input)) (read (cdr input) (declarevariable input cstate)))
@@ -176,10 +167,32 @@
       #f))
 
 
+;TODO return 'true' or 'false' rather than #t or #f
+(define (booleanevaluate expression cstate)
+  (cond
+    ((equal? '< (firstelement  expression))
+      (< (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
+    ((equal? '> (firstelement  expression))
+      (> (booleanevaluate (secondelement expression) cstate) (booleanevaluate (thirdelement expression) cstate)))
+    ((equal? '&& (firstelement expression))
+      (and (booleanevaluate (secondelement expression) cstate)))
+    ((equal? '|| (firstelement expression))
+      (or (booleanevaluate (secondelement expression) cstate)))))
 
 
-
-;if it's none of those characters, throw error
+(define (intevaluate expression cstate)
+  (cond
+    ((equal? '- (firstelement expression))
+      (- (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
+    ((equal? '/ (firstelement  expression))
+      (floor (/ (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate))))
+    ((equal? '* (firstelement  expression))
+      * (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
+    ((equal? '+ (firstelement  expression))
+      (+ (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement expression) cstate)))
+    ((equal? '% (firstelement  expression))
+      (modulo (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
+    (undefinederror))
 
 (define m.value.int
   (lambda (in)
@@ -196,12 +209,12 @@
   (lambda (e)
     (car e)))
 (define operand1 cadr)
-(define operand2 caddr)git p
+(define operand2 caddr)
 
 
 
 
-
+;TODO make this do something
 (define (unaryoperators  input cstate)
   (cond
     ((equal? 'return (firstelement  input)) (read (cdr input) cstate))
@@ -210,12 +223,32 @@
     ((equal? 'var (firstelement  input) (read (cdr  input) (declare (secondelement  input) cstate))))
     (else (print "here"))))
 
-    ;from test answers
-    (define (m_state_for statement1 condition statement2 statement3 cstate)
-      (if (booleanevaluate condition (m_state statement1 state))
-        (m_state_for '() condition statement2 statement3 (m_state statement2 (m_state statement3 (m_state statement1 cstate))))
-        ;else
-        (m_state (statement1 cstate))))
+;------------------------------------------------------------
+;flow control methods
+;------------------------------------------------------------
+;from test answers and notes in class
+(define (m_state_for statement1 condition statement2 statement3 cstate)
+   (if (booleanevaluate condition (m_state statement1 state))
+   (for '() condition statement2 statement3 (m_state statement2 (m_state statement3 (m_state statement1 cstate))))
+   (m_state (statement1 cstate))))
+
+(define (m_state_if condition then else cstate)
+  (if (booleanevaluate condition) (m_state then cstate)
+      (m_state else cstate)))
+
+(define (m_state_while condition statement cstate)
+  (if (booleanevaluate condition) (m_state_while condition (m_state statement cstate))
+      cstate))
+
+;on open bracket, add a new layer to the state
+(define (openbracket cstate)
+  (add_layer emptylayer cstate))
+;on close bracket, remove the top most layer from the stack
+(define (closebracket cstate)
+  (getNextLayers cstate))
+
+(define (m_state_try statement catchstatement cstate break)
+  ())
 
 
 (define testlayer '((t v g y s g thsi x) (1 2 3 4 5 6 7 8)))
