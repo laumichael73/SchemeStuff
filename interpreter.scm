@@ -120,25 +120,6 @@
     ;if its not declared then need to declare before using
     (else (declaringerror))))
 
-
-;reads whatever the unput is and sends to the helper methods depending on what is needed
-(define (read  input cstate)
-  (cond
-    ((null?  input))
-    (else (read (cdr input) (m_state (car input) c_state)))))
-
-    ;test for unary operators
-
-    ;test for binary operators
-    ;(operator <input1> <input2>)
-    
-    ;if the first statement is (var ....)
-    ;if the first statement is (return ...)
-    ((equal? 'return (firstelement input)) (read (cdr input) cstate))
-    (else (read (cdr input) cstate))))
-
-
-
 ;returns the updated state after declaring variable, called by read
 (define (declarevariable input cstate)
   (cond
@@ -147,12 +128,55 @@
     ;else it's a binary (var x 10)
     (else (equals (secondelement input) (thirdelement input) (declare (secondelement input) cstate)))))
 
+
+
+
+;reads whatever the unput is and sends to the helper methods depending on what is needed
+(define (read input cstate)
+  (cond
+    ((null?  input) cstate)
+    (else (read (cdr input) (m_state (car input) cstate)))))
+
+
+(define (m_state expression cstate)
+  (cond
+    ;TODO check read expression or cdr expression
+    ((equal? 'var (firstelement expression)) (declarevariable expression cstate))
+    ((equal? 'return (firstelement expression)) (evaluate (restof expression) cstate))
+    ;check assignment
+    ;intexpression
+    ;boolexpression
+    ;flow control expression
+    
+    
+    ;test for unary operators
+
+    ;test for binary operators
+    ;(operator <input1> <input2>)
+    
+    ;if the first statement is (var ....)
+    ;if the first statement is (return ...)
+    
+    (else (read (cdr input) cstate))))
+
+
+;TODO test this
+(define (evaluate expression cstate)
+  (cond
+    ((null? expression) expresssion)
+    ((number? expression) expression)
+    ((ismember? expression '(true TRUE True false False FALSE)) expression)
+    ((isVariable? expression) (m_state_lookup expression cstate)); I don't like this
+    ((ismember? (firstelement expression) '(< > <= >= == != && ||)) (booleanevaluate expression cstate))
+    ((ismember? (firstelement expression) '(+ - * / %)) (intevaluate expression cstate))
+    (evaluate (firstelement expression) (
+
 ;(return <expression>)
 (define (returnvalue input cstate)
   (cond
     ((number? input) input)
     ((isVariable? input cstate) (m_state_lookup input cstate ))
-    (read input cstate)))
+    (input cstate)))
 
 (define (isVariable? var cstate)
   (if (not (null? (m_state_lookup var cstate))) #t
@@ -189,12 +213,6 @@
       (modulo (intevaluate (secondelement expression) cstate) (intevaluate (thirdelement  expression) cstate)))
     (else (undefinederror))))
 
-;returns the state after we evaluate the expression
-(define (m_state expression cstate)
-  (cond
-    ((equal? 'var (firstelement input)) (read (cdr input) (declarevariable input cstate)))
-
-
 
 
 
@@ -218,9 +236,9 @@
 ;flow control methods
 ;------------------------------------------------------------
 ;from test answers and notes in class
-(define (m_state_for statement1 condition statement2 statement3 cstate)
+(define (m_state_for statement1 condition statement2 statement3 cstate break)
    (if (booleanevaluate condition (m_state statement1 state))
-   (for '() condition statement2 statement3 (m_state statement2 (m_state statement3 (m_state statement1 cstate))))
+   (for '() condition statement2 statement3 (m_state statement2 (m_state statement3 (m_state statement1 cstate))) break)
    (m_state (statement1 cstate))))
 
 (define (m_state_if condition then else cstate)
